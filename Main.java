@@ -1,13 +1,25 @@
 import java.util.*;
-
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 public class Main {
 
     public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // Sets the UI to the host system's native theme (Windows/Mac/Linux)
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                System.err.println("Failed to set native Look & Feel, defaulting to Metal.");
+            }
+            
+            // Launch the GUI
+            new UserInterface();
+        });
 
         // ------------------------------------------------------------
         // 1. LOAD RAW DATA
         // ------------------------------------------------------------
-        String filePath = "data.csv"; // TODO: point this at your actual CSV
+        String filePath = "data.csv"; 
 
         LoadData loader = new LoadData(filePath);
 

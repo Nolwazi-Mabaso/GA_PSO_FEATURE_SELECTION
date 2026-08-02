@@ -22,9 +22,6 @@ public class Evaluation {
 
     }
 
-
-
-
     public double calculateF1Score() {
 
 
@@ -46,9 +43,6 @@ public class Evaluation {
     }
 
 
-
-
-
     private double calculatePrecision() {
 
 
@@ -65,9 +59,6 @@ public class Evaluation {
     }
 
 
-
-
-
     private double calculateRecall() {
 
 
@@ -82,9 +73,6 @@ public class Evaluation {
                 (truePositive + falseNegative);
 
     }
-
-
-
 
 
     public double calculateGMean() {
@@ -114,8 +102,6 @@ public class Evaluation {
         );
 
     }
-
-
 
 
 
