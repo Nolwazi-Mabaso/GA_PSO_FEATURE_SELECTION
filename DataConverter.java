@@ -1,18 +1,9 @@
 import java.util.List;
 
-/*
- * Converts rows of String[] (as produced by DataSplitter / ValidationSplitter)
- * into the numeric double[][] features and int[] labels that KNN and
- * FitnessFunction expect.
- *
- * ASSUMPTION: the LAST column in each row is the class label (0 or 1),
- * and every other column is an already-preprocessed numeric feature.
- * If your label lives in a different column, change labelIndex below.
- */
 public class DataConverter {
 
     public static double[][] toFeatureArray(List<String[]> rows) {
-        int numFeatures = rows.get(0).length - 1; // last column excluded
+        int numFeatures = rows.get(0).length - 1; 
         double[][] features = new double[rows.size()][numFeatures];
 
         for (int i = 0; i < rows.size(); i++) {
@@ -26,7 +17,7 @@ public class DataConverter {
     }
 
     public static int[] toLabelArray(List<String[]> rows) {
-        int labelIndex = rows.get(0).length - 1; // last column
+        int labelIndex = rows.get(0).length - 1; 
         int[] labels = new int[rows.size()];
 
         for (int i = 0; i < rows.size(); i++) {

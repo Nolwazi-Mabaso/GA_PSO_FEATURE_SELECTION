@@ -2,20 +2,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/*
- * Particle Swarm Optimization, mirroring GeneticAlgorithm's structure so
- * it can be dropped into the same Main loop with minimal changes.
- *
- * Same chromosome/gene encoding as the GA:
- *   -1     = do not select a feature from this group
- *    0..n  = index of the selected feature within the group
- *
- * P-S-O is naturally continuous (real-valued position + velocity), so
- * each particle's position is a double[] internally. When it's time to
- * evaluate fitness or report a result, the position gets rounded and
- * clamped to the nearest valid gene value, same encoding as the GA,
- * just reached a different way.
- */
 public class PSO {
 
     private final Random random = new Random(1);
@@ -23,8 +9,8 @@ public class PSO {
     private final int swarmSize;
     private final int iterations;
     private final double inertiaWeight;
-    private final double cognitiveWeight; // pulls particle toward its own best
-    private final double socialWeight;    // pulls particle toward the swarm's best
+    private final double cognitiveWeight; 
+    private final double socialWeight;   
 
     public PSO(int swarmSize,
                int iterations,
@@ -43,10 +29,6 @@ public class PSO {
         return iterations;
     }
 
-    /*
-     * A single particle: its current position/velocity, plus the best
-     * position IT has personally found so far (pBest).
-     */
     public static class Particle {
         double[] position;
         double[] velocity;
@@ -61,12 +43,7 @@ public class PSO {
         }
     }
 
-    /*
-     * Creates the initial swarm. Each particle's position has one
-     * dimension per Pearson feature group, same as a GA chromosome's
-     * gene count. Each dimension is randomly placed between -1 (not
-     * selected) and (groupSize - 1) (last valid feature index).
-     */
+
     public List<Particle> initializeSwarm(int numGroups, List<List<Integer>> groups) {
 
         List<Particle> swarm = new ArrayList<>();
@@ -83,7 +60,7 @@ public class PSO {
                 double upperBound = groupSize - 1;
 
                 position[g] = lowerBound + random.nextDouble() * (upperBound - lowerBound);
-                velocity[g] = 0; // start with no motion
+                velocity[g] = 0; 
             }
 
             swarm.add(new Particle(position, velocity));
@@ -92,10 +69,6 @@ public class PSO {
         return swarm;
     }
 
-    /*
-     * Converts a particle's continuous position into the actual feature
-     * indices used by KNN, same job as GeneticAlgorithm.decodeChromosome.
-     */
     public List<Integer> decodeParticle(double[] position, List<List<Integer>> groups) {
 
         List<Integer> featureIndices = new ArrayList<>();
@@ -113,8 +86,6 @@ public class PSO {
         return featureIndices;
     }
 
-    // Rounds a continuous position value to the nearest valid gene,
-    // then clamps it inside [-1, groupSize - 1].
     private int roundAndClamp(double value, int groupSize) {
         int rounded = (int) Math.round(value);
 
@@ -128,12 +99,6 @@ public class PSO {
         return rounded;
     }
 
-    /*
-     * Updates every particle's velocity and position for one iteration,
-     * pulling each particle toward its own best-known position (pBest)
-     * and the swarm's best-known position (gBest). This is the P-S-O
-     * equivalent of GeneticAlgorithm.evolve().
-     */
     public void updateSwarm(List<Particle> swarm, List<List<Integer>> groups, double[] gBestPosition) {
 
         for (Particle particle : swarm) {
@@ -149,8 +114,6 @@ public class PSO {
                 particle.velocity[g] = (inertiaWeight * particle.velocity[g]) + cognitive + social;
                 particle.position[g] += particle.velocity[g];
 
-                // Clamp position back inside valid bounds for this group,
-                // otherwise particles can drift off into meaningless values.
                 int groupSize = groups.get(g).size();
                 double lowerBound = -1;
                 double upperBound = groupSize - 1;
@@ -167,14 +130,10 @@ public class PSO {
         }
     }
 
-    /*
-     * Same reporting format as GeneticAlgorithm.printResults, so console
-     * output is directly comparable between the two algorithms.
-     */
     public void printResults(double[] bestPosition, List<Integer> bestFeatureSubset) {
-        System.out.println("\n======================================");
+        System.out.println("\n");
         System.out.println("BEST FEATURE SUBSET (PSO)");
-        System.out.println("======================================");
+        System.out.println("_______________________________________");
         System.out.println("Encoded Position (rounded):");
 
         List<Integer> roundedPosition = new ArrayList<>();
@@ -186,6 +145,6 @@ public class PSO {
         System.out.println("\nSelected Feature Indices:");
         System.out.println(bestFeatureSubset);
         System.out.println("Total Selected Features: " + bestFeatureSubset.size());
-        System.out.println("======================================");
+        System.out.println("\n");
     }
 }

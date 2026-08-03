@@ -3,10 +3,6 @@ import java.util.*;
 public class Main {
 
     public static void main(String[] args) {
-
-        // ------------------------------------------------------------
-        // 1. LOAD RAW DATA
-        // ------------------------------------------------------------
         String filePath = "data.csv"; 
 
         LoadData loader = new LoadData(filePath);
@@ -15,57 +11,37 @@ public class Main {
             System.out.println("Could not load data, stopping.");
             return;
         }
-
         List<String[]> rawData = loader.getData();
 
-        // ------------------------------------------------------------
-        // 1b. MOVE LABEL COLUMN TO THE END
-        // ------------------------------------------------------------
         int labelColumn = 0;
         rawData = moveColumnToEnd(rawData, labelColumn);
 
-        // ------------------------------------------------------------
-        // 2. PREPROCESS + PEARSON FEATURE GROUPS
-        // ------------------------------------------------------------
         Preprocessor preprocessor = new Preprocessor(rawData);
         List<String[]> processedData = preprocessor.preprocess();
         List<List<Integer>> groups = preprocessor.getGroups();
 
         PearsonCorrelation.printFeatureGroups(groups);
 
-        // ------------------------------------------------------------
-        // 3. TRAIN / TEST SPLIT (test set locked away until the end)
-        // ------------------------------------------------------------
         DataSplitter dataSplitter = new DataSplitter();
         DataSplit dataSplit = dataSplitter.splitData(processedData, 0.7);
 
-        // ------------------------------------------------------------
-        // 4. INNER TRAINING / VALIDATION SPLIT
-        // ------------------------------------------------------------
         ValidationSplitter validationSplitter = new ValidationSplitter();
         ValidationSplit validationSplit =
                 validationSplitter.splitValidation(dataSplit.getTrainSet(), 0.8);
 
-        // ------------------------------------------------------------
-        // 5. CONVERT String[] ROWS INTO NUMERIC ARRAYS FOR KNN
-        // ------------------------------------------------------------
         double[][] innerTrainData = DataConverter.toFeatureArray(validationSplit.getTrainingSet());
         int[] innerTrainLabels = DataConverter.toLabelArray(validationSplit.getTrainingSet());
 
         double[][] validationData = DataConverter.toFeatureArray(validationSplit.getValidationSet());
         int[] validationLabels = DataConverter.toLabelArray(validationSplit.getValidationSet());
 
-        // Shared fitness evaluator for both GA and PSO
         int k = 5;
         FitnessFunction fitnessFunction = new FitnessFunction(k);
         int numGroups = groups.size();
 
-        // ============================================================
-        // 6. RUN THE GENETIC ALGORITHM
-        // ============================================================
-        System.out.println("\n======================================");
+        System.out.println("\n");
         System.out.println("STARTING GENETIC ALGORITHM (GA)");
-        System.out.println("======================================");
+        System.out.println("________________________________");
 
         int gaPopSize = 50;
         int gaGenerations = 100;
@@ -111,8 +87,8 @@ public class Main {
                 fitnessScores.add(fitness);
 
                 System.out.println(
-                        "Chromosome " + c + " -> Features: " + selectedFeatures + "\n" +
-                        " -> Fitness: " + fitness + "\n"
+                        "Chromosome " + c + " -- Features: " + selectedFeatures + "\n" +
+                        " -- Fitness: " + fitness + "\n"
                 );
 
                 if (fitness > bestFitnessThisGen) {
@@ -147,12 +123,9 @@ public class Main {
 
         ga.printResults(bestGaChromosome, bestGaFeatureSubset);
 
-        // ============================================================
-        // 7. RUN PARTICLE SWARM OPTIMIZATION (PSO)
-        // ============================================================
-        System.out.println("\n======================================");
+        System.out.println("\n");
         System.out.println("STARTING PARTICLE SWARM OPTIMIZATION (PSO)");
-        System.out.println("======================================");
+        System.out.println("___________________________________________");
 
         int swarmSize = 50;
         int psoIterations = 100;
@@ -196,13 +169,10 @@ public class Main {
                         selectedFeatures
                 );
 
-                // Update particle's personal best (pBest)
                 if (fitness > particle.pBestFitness) {
                     particle.pBestFitness = fitness;
                     particle.pBestPosition = particle.position.clone();
                 }
-
-                // Update swarm's global best (gBest)
                 if (fitness > bestPsoFitnessEver) {
                     bestPsoFitnessEver = fitness;
                     gBestPosition = particle.position.clone();
@@ -214,8 +184,8 @@ public class Main {
                 }
 
                 System.out.println(
-                        "Particle " + p + " -> Features: " + selectedFeatures + "\n" +
-                        " -> Fitness: " + fitness + "\n"
+                        "Particle " + p + " -- Features: " + selectedFeatures + "\n" +
+                        " -- Fitness: " + fitness + "\n"
                 );
             }
 
@@ -235,7 +205,6 @@ public class Main {
                 break;
             }
 
-            // Update positions and velocities for next iteration
             if (gBestPosition != null) {
                 pso.updateSwarm(swarm, groups, gBestPosition);
             }
@@ -243,9 +212,6 @@ public class Main {
 
         pso.printResults(gBestPosition, bestPsoFeatureSubset);
 
-        // ============================================================
-        // 8. FINAL EVALUATION ON UNTOUCHED TEST SET
-        // ============================================================
         double[][] finalTrainData = DataConverter.toFeatureArray(dataSplit.getTrainSet());
         int[] finalTrainLabels = DataConverter.toLabelArray(dataSplit.getTrainSet());
 
@@ -254,7 +220,6 @@ public class Main {
 
         KNN finalKnn = new KNN(k);
 
-        // Evaluate GA Best Subset
         Evaluation gaEvaluation = finalKnn.evaluate(
                 finalTrainData,
                 finalTrainLabels,
@@ -263,7 +228,6 @@ public class Main {
                 bestGaFeatureSubset
         );
 
-        // Evaluate PSO Best Subset
         Evaluation psoEvaluation = finalKnn.evaluate(
                 finalTrainData,
                 finalTrainLabels,
@@ -272,9 +236,9 @@ public class Main {
                 bestPsoFeatureSubset
         );
 
-        System.out.println("\n======================================");
+        System.out.println("\n___________________________________________");
         System.out.println("FINAL TEST SET COMPARISON");
-        System.out.println("======================================");
+        System.out.println("___________________________________________");
         System.out.println("--- Genetic Algorithm (GA) ---");
         System.out.println("F1 Score: " + gaEvaluation.calculateF1Score());
         System.out.println("G-Mean:   " + gaEvaluation.calculateGMean());
@@ -282,7 +246,7 @@ public class Main {
         System.out.println("\n--- Particle Swarm Optimization (PSO) ---");
         System.out.println("F1 Score: " + psoEvaluation.calculateF1Score());
         System.out.println("G-Mean:   " + psoEvaluation.calculateGMean());
-        System.out.println("======================================");
+        System.out.println("\n");
     }
 
     private static List<String[]> moveColumnToEnd(List<String[]> data, int targetCol) {

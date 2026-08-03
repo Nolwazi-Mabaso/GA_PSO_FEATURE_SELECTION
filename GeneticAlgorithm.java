@@ -3,14 +3,13 @@ import java.util.List;
 import java.util.Random;
 
 public class GeneticAlgorithm {
-
     private final Random random = new Random(1);
 
     private final int populationSize;
     private final int generations;
     private final double crossoverRate;
     private final double mutationRate;
-    private final int eliteCount = 3; // Declared missing eliteCount variable
+    private final int eliteCount = 3; 
 
     public GeneticAlgorithm(int populationSize,
                             int generations,
@@ -48,10 +47,6 @@ public class GeneticAlgorithm {
         return population;
     }
 
-    /*
-     * Converts a chromosome into the actual feature indices
-     * that will be used by KNN.
-     */
     public List<Integer> decodeChromosome(List<Integer> chromosome,
                                           List<List<Integer>> groups) {
 
@@ -78,7 +73,6 @@ public class GeneticAlgorithm {
             indices.add(i);
         }
 
-        // Sort indices according to fitness (highest first)
         indices.sort((a, b) ->
                 Double.compare(
                         fitnessScores.get(b),
@@ -99,10 +93,6 @@ public class GeneticAlgorithm {
         return elites;
     }
 
-    /*
-     * Tournament selection:
-     * Create a tournament subset and select the best chromosome inside it.
-     */
     private List<Integer> tournamentSelection(
             List<List<Integer>> population,
             List<Double> fitnessScores,
@@ -110,13 +100,11 @@ public class GeneticAlgorithm {
 
         List<Integer> tournament = new ArrayList<>();
 
-        // Create tournament subset
         for (int i = 0; i < tournamentSize; i++) {
             int index = random.nextInt(population.size());
             tournament.add(index);
         }
 
-        // Find best chromosome in tournament
         int bestIndex = tournament.get(0);
 
         for (int index : tournament) {
@@ -128,9 +116,6 @@ public class GeneticAlgorithm {
         return new ArrayList<>(population.get(bestIndex));
     }
 
-    /*
-     * Uniform crossover
-     */
     private List<List<Integer>> uniformCrossover(
             List<Integer> parent1,
             List<Integer> parent2) {
@@ -151,7 +136,6 @@ public class GeneticAlgorithm {
             }
 
         } else {
-            // No crossover
             child1 = new ArrayList<>(parent1);
             child2 = new ArrayList<>(parent2);
         }
@@ -163,10 +147,6 @@ public class GeneticAlgorithm {
         return children;
     }
 
-    /*
-     * Mutation:
-     * Activate, remove, or change a selected feature.
-     */
     private void mutate(
             List<Integer> chromosome,
             List<List<Integer>> groups) {
@@ -177,17 +157,14 @@ public class GeneticAlgorithm {
                 int currentGene = chromosome.get(i);
 
                 if (currentGene == -1) {
-                    // Select a feature from this group
                     chromosome.set(
                             i,
                             random.nextInt(groups.get(i).size())
                     );
                 } else {
                     if (random.nextBoolean()) {
-                        // Remove feature
                         chromosome.set(i, -1);
                     } else {
-                        // Select another feature from the same group
                         chromosome.set(
                                 i,
                                 random.nextInt(groups.get(i).size())
@@ -198,32 +175,19 @@ public class GeneticAlgorithm {
         }
     }
 
-    /*
-     * Create one new generation
-     */
+
     public void evolve(
             List<List<Integer>> population,
             List<List<Integer>> groups,
             List<Double> fitnessScores) {
-
-        // 1. Keep the best elite chromosomes
         List<List<Integer>> newPopulation = selectElite(population, fitnessScores);
 
-        // 2. Create remaining chromosomes
         while (newPopulation.size() < populationSize) {
-
-            // Parent selection
             List<Integer> parent1 = tournamentSelection(population, fitnessScores, 3);
             List<Integer> parent2 = tournamentSelection(population, fitnessScores, 3);
-
-            // Crossover
             List<List<Integer>> children = uniformCrossover(parent1, parent2);
-
-            // Mutation
             mutate(children.get(0), groups);
             mutate(children.get(1), groups);
-
-            // Add children
             newPopulation.add(children.get(0));
 
             if (newPopulation.size() < populationSize) {
@@ -231,22 +195,20 @@ public class GeneticAlgorithm {
             }
         }
 
-        // Replace old population
         population.clear();
         population.addAll(newPopulation);
     }
 
-    // Helper to print summary results after genetic algorithm completion
     public void printResults(List<Integer> bestChromosome, List<Integer> bestFeatureSubset) {
-        System.out.println("\n======================================");
+        System.out.println("\n");
         System.out.println("BEST FEATURE SUBSET");
-        System.out.println("======================================");
+        System.out.println("_______________________________________");
         System.out.println("Encoded Chromosome:");
         System.out.println(bestChromosome);
         System.out.println("\nSelected Feature Indices:");
         System.out.println(bestFeatureSubset);
         System.out.println("Total Selected Features: " + bestFeatureSubset.size());
-        System.out.println("======================================");
+        System.out.println("___________________________________________");
     }
 
     // Getters
