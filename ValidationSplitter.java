@@ -1,7 +1,7 @@
 import java.util.*;
 
 public class ValidationSplitter {
-    private final Random random = new Random(42);
+    private final Random random = new Random();
 
     public ValidationSplit splitValidation(List<String[]> trainSet, double trainingRatio) {
 

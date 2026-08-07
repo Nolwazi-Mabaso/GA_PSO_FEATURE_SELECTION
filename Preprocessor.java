@@ -22,7 +22,7 @@ public class Preprocessor {
                 Normalize norm = new Normalize();
                 data = norm.scale(data);
                 
-                PearsonCorrelation pc = new PearsonCorrelation(0.9);
+                PearsonCorrelation pc = new PearsonCorrelation(0.8);
                 groups = pc.groupFeatures(data);
 
                 return data;

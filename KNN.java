@@ -1,4 +1,7 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 
 public class KNN {
 
@@ -17,30 +20,20 @@ public class KNN {
         List<Neighbor> neighbors = new ArrayList<>();
 
         for (int i = 0; i < trainData.length; i++) {
-
-            double distance = calculateDistance(
-                    trainData[i],
-                    testSample,
-                    selectedFeatures);
-
-            neighbors.add(
-                    new Neighbor(distance, trainLabels[i]));
+            double distance = calculateDistance(trainData[i], testSample, selectedFeatures);
+            neighbors.add(new Neighbor(distance, trainLabels[i]));
         }
 
         Collections.sort(neighbors);
+
         int countClass0 = 0;
         int countClass1 = 0;
 
         for (int i = 0; i < k; i++) {
-
             if (neighbors.get(i).label == 1) {
-
                 countClass1++;
-
             } else {
-
                 countClass0++;
-
             }
         }
 
@@ -52,13 +45,11 @@ public class KNN {
             double[] point2,
             List<Integer> selectedFeatures) {
 
-        double sum = 0;
-
+        double sum = 0.0;
         for (int feature : selectedFeatures) {
             double difference = point1[feature] - point2[feature];
             sum += difference * difference;
         }
-
         return Math.sqrt(sum);
     }
 
@@ -68,62 +59,42 @@ public class KNN {
             double[][] validationData,
             int[] validationLabels,
             List<Integer> selectedFeatures) {
+
         int truePositive = 0;
         int trueNegative = 0;
         int falsePositive = 0;
         int falseNegative = 0;
 
         for (int i = 0; i < validationData.length; i++) {
-            int prediction = predict(
-                    trainData,
-                    trainLabels,
-                    validationData[i],
-                    selectedFeatures);
-
+            int prediction = predict(trainData, trainLabels, validationData[i], selectedFeatures);
             int actual = validationLabels[i];
 
             if (prediction == 1 && actual == 1) {
-
                 truePositive++;
-
             } else if (prediction == 0 && actual == 0) {
-
                 trueNegative++;
-
             } else if (prediction == 1 && actual == 0) {
-
                 falsePositive++;
             } else {
-
                 falseNegative++;
             }
-
         }
-        return new Evaluation(
-                truePositive,
-                trueNegative,
-                falsePositive,
-                falseNegative);
+
+        return new Evaluation(truePositive, trueNegative, falsePositive, falseNegative);
     }
 
     private static class Neighbor implements Comparable<Neighbor> {
-
-        double distance;
-        int label;
+        final double distance;
+        final int label;
 
         Neighbor(double distance, int label) {
-
             this.distance = distance;
             this.label = label;
-
         }
 
         @Override
         public int compareTo(Neighbor other) {
-
-            return Double.compare(
-                    this.distance,
-                    other.distance);
+            return Double.compare(this.distance, other.distance);
         }
     }
 }

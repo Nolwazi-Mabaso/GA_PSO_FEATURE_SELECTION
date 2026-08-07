@@ -12,13 +12,18 @@ public class UserInterface extends JFrame {
     private JLabel rawFeaturesLabel;
     private JLabel pearsonGroupsLabel;
 
-    private JComboBox<String> classifierBox;
+    private JRadioButton knnRadio;
+    private JRadioButton nbRadio;
+    private JRadioButton svmRadio;
+    private ButtonGroup classifierGroup;
+
     private JButton runButton;
     private JButton exportButton;
     private JProgressBar progressBar;
 
     private JTextArea logArea;
     private JTextArea resultsArea;
+    private JTextArea hyperparamsArea;
 
     private String selectedFilePath = null;
 
@@ -39,8 +44,8 @@ public class UserInterface extends JFrame {
         add(buildTopPanel(), BorderLayout.NORTH);
 
         JPanel centerSplit = new JPanel(new BorderLayout());
-        centerSplit.add(buildConfigPanel(), BorderLayout.WEST);
         centerSplit.add(buildConsolePanel(), BorderLayout.CENTER);
+        centerSplit.add(buildConfigPanel(), BorderLayout.EAST);
         add(centerSplit, BorderLayout.CENTER);
     }
 
@@ -68,16 +73,26 @@ public class UserInterface extends JFrame {
     }
 
     private JPanel buildConfigPanel() {
-        JPanel westPanel = new JPanel();
-        westPanel.setLayout(new BoxLayout(westPanel, BoxLayout.Y_AXIS));
-        westPanel.setBorder(BorderFactory.createTitledBorder("Configuration"));
-        westPanel.setPreferredSize(new Dimension(260, 0));
+        JPanel eastPanel = new JPanel();
+        eastPanel.setLayout(new BoxLayout(eastPanel, BoxLayout.Y_AXIS));
+        eastPanel.setBorder(BorderFactory.createTitledBorder("Configuration"));
+        eastPanel.setPreferredSize(new Dimension(280, 0));
 
         JLabel classifierLabel = new JLabel("Final Evaluation Classifier:");
         classifierLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        classifierBox = new JComboBox<>(new String[]{"KNN", "Naive Bayes", "SVM"});
-        classifierBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        classifierBox.setMaximumSize(new Dimension(220, 28));
+
+        knnRadio = new JRadioButton("KNN", true);
+        nbRadio = new JRadioButton("Naive Bayes");
+        svmRadio = new JRadioButton("SVM");
+
+        knnRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+        nbRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+        svmRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        classifierGroup = new ButtonGroup();
+        classifierGroup.add(knnRadio);
+        classifierGroup.add(nbRadio);
+        classifierGroup.add(svmRadio);
 
         runButton = new JButton("RUN EXPERIMENT");
         runButton.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -88,29 +103,70 @@ public class UserInterface extends JFrame {
         progressBar.setStringPainted(true);
         progressBar.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        hyperparamsArea = new JTextArea();
+        hyperparamsArea.setEditable(false);
+        hyperparamsArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        hyperparamsArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hyperparamsArea.setText(buildHyperparamsText());
+        JScrollPane hyperparamsScroll = new JScrollPane(hyperparamsArea);
+        hyperparamsScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        hyperparamsScroll.setBorder(BorderFactory.createTitledBorder("Hyperparameters"));
+        hyperparamsScroll.setPreferredSize(new Dimension(260, 280));
+
         exportButton = new JButton("Export Filtered CSVs");
         exportButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        exportButton.setEnabled(false);
+        exportButton.setVisible(false); // hidden until a run completes
+
         exportButton.addActionListener(e -> exportFilteredCsv());
 
-        westPanel.add(classifierLabel);
-        westPanel.add(Box.createVerticalStrut(4));
-        westPanel.add(classifierBox);
-        westPanel.add(Box.createVerticalStrut(20));
-        westPanel.add(runButton);
-        westPanel.add(Box.createVerticalStrut(10));
-        westPanel.add(progressBar);
-        westPanel.add(Box.createVerticalStrut(20));
-        westPanel.add(new JSeparator());
-        westPanel.add(Box.createVerticalStrut(10));
-        westPanel.add(exportButton);
-        westPanel.add(Box.createVerticalGlue());
+        eastPanel.add(classifierLabel);
+        eastPanel.add(Box.createVerticalStrut(4));
+        eastPanel.add(knnRadio);
+        eastPanel.add(nbRadio);
+        eastPanel.add(svmRadio);
+        eastPanel.add(Box.createVerticalStrut(16));
+        eastPanel.add(runButton);
+        eastPanel.add(Box.createVerticalStrut(10));
+        eastPanel.add(progressBar);
+        eastPanel.add(Box.createVerticalStrut(16));
+        eastPanel.add(new JSeparator());
+        eastPanel.add(Box.createVerticalStrut(10));
+        eastPanel.add(hyperparamsScroll);
+        eastPanel.add(Box.createVerticalStrut(16));
+        eastPanel.add(exportButton);
+        eastPanel.add(Box.createVerticalGlue());
 
-        return westPanel;
+        return eastPanel;
+    }
+
+    private String buildHyperparamsText() {
+        return "GENETIC ALGORITHM\n" +
+               "  Population:   50\n" +
+               "  Generations:  100 (max)\n" +
+               "  Crossover:    0.80\n" +
+               "  Mutation:     0.10\n" +
+               "  Elite Count:  1\n" +
+               "  Repeat Limit: 15\n\n" +
+               "PARTICLE SWARM OPTIMIZATION\n" +
+               "  Swarm Size:   50\n" +
+               "  Iterations:   100 (max)\n" +
+               "  Inertia:      0.5\n" +
+               "  Cognitive:    1.5\n" +
+               "  Social:       1.5\n" +
+               "  Repeat Limit: 15\n\n" +
+               "CLASSIFICATION\n" +
+               "  KNN k:        5\n" +
+               "  Random Seed:  42";
+    }
+
+    private String getSelectedClassifier() {
+        if (nbRadio.isSelected()) return "Naive Bayes";
+        if (svmRadio.isSelected()) return "SVM";
+        return "KNN";
     }
 
     private JPanel buildConsolePanel() {
-        JPanel rightPanel = new JPanel(new BorderLayout());
+        JPanel centerPanel = new JPanel(new BorderLayout());
 
         logArea = new JTextArea();
         logArea.setEditable(false);
@@ -125,9 +181,9 @@ public class UserInterface extends JFrame {
         resultsScroll.setBorder(BorderFactory.createTitledBorder("Results Summary"));
         resultsScroll.setPreferredSize(new Dimension(0, 180));
 
-        rightPanel.add(logScroll, BorderLayout.CENTER);
-        rightPanel.add(resultsScroll, BorderLayout.SOUTH);
-        return rightPanel;
+        centerPanel.add(logScroll, BorderLayout.CENTER);
+        centerPanel.add(resultsScroll, BorderLayout.SOUTH);
+        return centerPanel;
     }
 
     private void chooseFile() {
@@ -159,12 +215,12 @@ public class UserInterface extends JFrame {
     private void runPipeline() {
         runButton.setEnabled(false);
         loadButton.setEnabled(false);
-        exportButton.setEnabled(false);
+        exportButton.setVisible(false);
         logArea.setText("");
         resultsArea.setText("");
         progressBar.setValue(0);
 
-        String classifierChoice = (String) classifierBox.getSelectedItem();
+        String classifierChoice = getSelectedClassifier();
         new PipelineWorker(selectedFilePath, classifierChoice).execute();
     }
 
@@ -196,7 +252,7 @@ public class UserInterface extends JFrame {
         protected void done() {
             runButton.setEnabled(true);
             loadButton.setEnabled(true);
-            exportButton.setEnabled(bestGaFeatureSubset != null && bestPsoFeatureSubset != null);
+            exportButton.setVisible(bestGaFeatureSubset != null && bestPsoFeatureSubset != null);
             progressBar.setValue(100);
             log("\nDone. Upload a new file or press Run again to repeat.");
             SwingUtilities.invokeLater(() ->
@@ -267,58 +323,93 @@ public class UserInterface extends JFrame {
         FitnessFunction fitnessFunction = new FitnessFunction(k);
         int numGroups = groups.size();
 
-        log("\nSTARTING GENETIC ALGORITHM (GA)");
-        log("________________________________");
+        // ================= GENETIC ALGORITHM =================
+        // ================= GENETIC ALGORITHM =================
+log("\nSTARTING GENETIC ALGORITHM (GA)");
+log("________________________________");
 
-        int gaPopSize = 50;
-        int gaGenerations = 100;
-        double crossoverRate = 0.8;
-        double mutationRate = 0.01;
+long gaStartTime = System.nanoTime();
 
-        GeneticAlgorithm ga = new GeneticAlgorithm(gaPopSize, gaGenerations, crossoverRate, mutationRate);
-        List<List<Integer>> population = ga.initializePopulation(numGroups, groups);
+int gaPopSize = 50;
+int gaGenerations = 100;
+double crossoverRate = 0.8;
+double mutationRate = 0.10;
 
-        double bestGaFitnessEver = -1;
-        int gaPatience = 15;
-        int gaGensWithoutImprovement = 0;
+GeneticAlgorithm ga = new GeneticAlgorithm(gaPopSize, gaGenerations, crossoverRate, mutationRate);
+List<List<Integer>> population = ga.initializePopulation(numGroups, groups);
 
-        for (int gen = 0; gen < ga.getGenerations(); gen++) {
-            List<Double> fitnessScores = new ArrayList<>();
-            double bestFitnessThisGen = -1;
+// Reset global trackers prior to the loop
+double bestGaFitnessEver = -Double.MAX_VALUE;
+bestGaFeatureSubset = new ArrayList<>();
 
-            for (List<Integer> chromosome : population) {
-                List<Integer> selectedFeatures = ga.decodeChromosome(chromosome, groups);
+for (int gen = 0; gen < ga.getGenerations(); gen++) {
+    List<Double> fitnessScores = new ArrayList<>();
+    List<Integer> currentBestChromosome = null;
+    double currentGenBestFitness = -Double.MAX_VALUE;
+    List<Integer> currentGenBestSubset = new ArrayList<>();
 
-                double fitness = fitnessFunction.calculateFitness(
-                        innerTrainData, innerTrainLabels, validationData, validationLabels, selectedFeatures);
+    for (List<Integer> chromosome : population) {
+        List<Integer> selectedFeatures = ga.decodeChromosome(chromosome, groups);
 
-                fitnessScores.add(fitness);
-                if (fitness > bestFitnessThisGen) bestFitnessThisGen = fitness;
-
-                if (fitness > bestGaFitnessEver) {
-                    bestGaFitnessEver = fitness;
-                    bestGaFeatureSubset = selectedFeatures;
-                }
-            }
-
-            log(String.format("Gen %02d: Best Solution = %s | Fitness = %.4f", gen + 1, bestGaFeatureSubset, bestGaFitnessEver));
-
-            setProgress(15 + (int) (35.0 * (gen + 1) / gaGenerations));
-
-            gaGensWithoutImprovement = (bestFitnessThisGen >= bestGaFitnessEver) ? 0 : gaGensWithoutImprovement + 1;
-            if (gaGensWithoutImprovement >= gaPatience) {
-                log("GA stopping early: no improvement in the last " + gaPatience + " generations.");
-                break;
-            }
-            ga.evolve(population, groups, fitnessScores);
+        // Fallback safety: ensure non-empty feature subsets don't break KNN
+        if (selectedFeatures.isEmpty()) {
+            fitnessScores.add(0.0);
+            continue;
         }
+
+        double fitness = fitnessFunction.calculateFitness(
+                innerTrainData, innerTrainLabels, validationData, validationLabels,
+                selectedFeatures, numGroups);
+
+        fitnessScores.add(fitness);
+
+        // Track local generation best
+        if (fitness > currentGenBestFitness) {
+            currentGenBestFitness = fitness;
+            currentBestChromosome = new ArrayList<>(chromosome);
+            currentGenBestSubset = selectedFeatures;
+        }
+
+        // Track global overall best
+        if (fitness > bestGaFitnessEver) {
+            bestGaFitnessEver = fitness;
+            bestGaFeatureSubset = new ArrayList<>(selectedFeatures);
+        }
+    }
+
+    // Log current generation best rather than sticking strictly to global best
+    log(String.format("Gen %02d: Gen Best Fitness = %.4f | Overall Best Fitness = %.4f | Selected Count = %d",
+            gen + 1, currentGenBestFitness, bestGaFitnessEver, currentGenBestSubset.size()));
+
+    setProgress(15 + (int) (35.0 * (gen + 1) / gaGenerations));
+
+    // Check convergence against generation's best chromosome
+    if (currentBestChromosome != null && ga.hasConverged(currentBestChromosome)) {
+        log("\nGA TERMINATED - " + ga.getStopReason()
+                + " (stopped at generation " + (gen + 1) + " of " + gaGenerations + ").");
+        break;
+    }
+
+    if (gen == gaGenerations - 1) {
+        log("\nGA TERMINATED - Reached maximum generation limit (" + gaGenerations + ").");
+    }
+
+    ga.evolve(population, groups, fitnessScores);
+}
+
+        long gaEndTime = System.nanoTime();
+        double gaRuntimeSeconds = (gaEndTime - gaStartTime) / 1_000_000_000.0;
 
         log("\nGA finished. Best feature subset: " + bestGaFeatureSubset);
         log("GA best fitness: " + bestGaFitnessEver);
+        log(String.format("GA Runtime: %.3f seconds", gaRuntimeSeconds));
         setProgress(50);
 
+        // ================= PARTICLE SWARM OPTIMIZATION =================
         log("\nSTARTING PARTICLE SWARM OPTIMIZATION (PSO)");
         log("___________________________________________");
+
+        long psoStartTime = System.nanoTime();
 
         int swarmSize = 50;
         int psoIterations = 100;
@@ -331,17 +422,15 @@ public class UserInterface extends JFrame {
 
         double[] gBestPosition = null;
         double bestPsoFitnessEver = -1;
-        int psoPatience = 15;
-        int psoItersWithoutImprovement = 0;
 
         for (int iter = 0; iter < pso.getIterations(); iter++) {
-            double bestFitnessThisIter = -1;
 
             for (PSO.Particle particle : swarm) {
                 List<Integer> selectedFeatures = pso.decodeParticle(particle.position, groups);
 
                 double fitness = fitnessFunction.calculateFitness(
-                        innerTrainData, innerTrainLabels, validationData, validationLabels, selectedFeatures);
+                        innerTrainData, innerTrainLabels, validationData, validationLabels,
+                        selectedFeatures, numGroups);
 
                 if (fitness > particle.pBestFitness) {
                     particle.pBestFitness = fitness;
@@ -352,25 +441,34 @@ public class UserInterface extends JFrame {
                     gBestPosition = particle.position.clone();
                     bestPsoFeatureSubset = selectedFeatures;
                 }
-                if (fitness > bestFitnessThisIter) bestFitnessThisIter = fitness;
             }
 
-            log(String.format("Iter %02d: Best Solution = %s | Fitness = %.4f", iter + 1, bestPsoFeatureSubset, bestPsoFitnessEver));
+            log(String.format("Iter %02d: Best Solution = %s | Fitness = %.4f",
+                    iter + 1, bestPsoFeatureSubset, bestPsoFitnessEver));
 
             setProgress(50 + (int) (35.0 * (iter + 1) / psoIterations));
 
-            psoItersWithoutImprovement = (bestFitnessThisIter >= bestPsoFitnessEver) ? 0 : psoItersWithoutImprovement + 1;
-            if (psoItersWithoutImprovement >= psoPatience) {
-                log("PSO stopping early: no improvement in the last " + psoPatience + " iterations.");
+            if (pso.hasConverged(gBestPosition)) {
+                log("\nPSO TERMINATED - " + pso.getStopReason()
+                        + " (stopped at iteration " + (iter + 1) + " of " + psoIterations + ").");
                 break;
             }
+
+            if (iter == psoIterations - 1) {
+                log("\nPSO TERMINATED - Reached maximum iteration limit (" + psoIterations + ").");
+            }
+
             if (gBestPosition != null) {
                 pso.updateSwarm(swarm, groups, gBestPosition);
             }
         }
 
+        long psoEndTime = System.nanoTime();
+        double psoRuntimeSeconds = (psoEndTime - psoStartTime) / 1_000_000_000.0;
+
         log("\nPSO finished. Best feature subset: " + bestPsoFeatureSubset);
         log("PSO best fitness: " + bestPsoFitnessEver);
+        log(String.format("PSO Runtime: %.3f seconds", psoRuntimeSeconds));
         setProgress(85);
 
         log("\nSTEP: Starting final evaluation using " + classifierChoice + " on the held-out test set...");
@@ -426,12 +524,14 @@ public class UserInterface extends JFrame {
                 "  Best Fitness:       " + String.format("%.4f", gaFitnessFinal) + "\n" +
                 "  Features Selected:  " + gaCount + " / " + denom + "\n" +
                 "  Test F1 Score:      " + String.format("%.4f", gaF1) + "\n" +
-                "  Test G-Mean:        " + String.format("%.4f", gaGMean) + "\n\n" +
+                "  Test G-Mean:        " + String.format("%.4f", gaGMean) + "\n" +
+                "  Runtime:            " + String.format("%.3f", gaRuntimeSeconds) + " s\n\n" +
                 "PARTICLE SWARM OPTIMIZATION (PSO)\n" +
                 "  Best Fitness:       " + String.format("%.4f", psoFitnessFinal) + "\n" +
                 "  Features Selected:  " + psoCount + " / " + denom + "\n" +
                 "  Test F1 Score:      " + String.format("%.4f", psoF1) + "\n" +
-                "  Test G-Mean:        " + String.format("%.4f", psoGMean) + "\n";
+                "  Test G-Mean:        " + String.format("%.4f", psoGMean) + "\n" +
+                "  Runtime:            " + String.format("%.3f", psoRuntimeSeconds) + " s\n";
         setResults(summary);
     }
 
