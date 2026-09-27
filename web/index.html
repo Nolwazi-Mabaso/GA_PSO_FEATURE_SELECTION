@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ML Optimization & Feature Selection Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ HEADER ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">⬢</div>
+      <div>
+        <h1>ML Optimization &amp; Feature Selection Dashboard</h1>
+        <p class="subtitle">Evaluation Suite v2.4 · <span class="status-dot"></span> Pipeline Ready</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="pill-group">
+        <span class="pill-label">Top Optimizer</span>
+        <span class="pill-value" id="topOptimizerPill">—</span>
+      </div>
+      <div class="pill-group">
+        <span class="pill-label">Active Classifier</span>
+        <span class="pill-value" id="activeClfPill">—</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ SETUP ============ -->
+  <section class="setup">
+    <div class="setup-title">
+      <span class="icon">⬆</span>
+      <h2>Pipeline Execution Data Ingestion</h2>
+    </div>
+
+    <div class="setup-grid">
+      <!-- Drop / browse -->
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">⬆</div>
+        <div class="drop-text">Drop CSV / Log JSON Execution</div>
+        <div class="drop-hint">Supports GA, PSO, SA execution outputs</div>
+        <button id="browseBtn" class="btn-outline">📁 Browse Dataset</button>
+        <input type="text" id="datasetPath" value="data/dataset.csv" hidden>
+      </div>
+
+      <!-- Dataset meta -->
+      <div class="meta-card">
+        <div class="meta-head">
+          <span>Dataset Meta</span>
+          <span class="tag-green">Ready</span>
+        </div>
+        <div class="meta-name" id="datasetName">data/dataset.csv</div>
+        <div class="meta-stats">
+          <div class="meta-stat">
+            <span class="meta-label">Total Samples</span>
+            <span class="meta-value" id="metaSamples">—</span>
+          </div>
+          <div class="meta-stat">
+            <span class="meta-label">Features Pool</span>
+            <span class="meta-value" id="metaFeatures">—</span>
+          </div>
+        </div>
+        <div class="meta-foot">
+          <span>Pearson Clusters: <b id="metaClusters">—</b></span>
+          <span class="tag-green">Valid Metric Matrix</span>
+        </div>
+      </div>
+
+      <!-- Classifier picker -->
+      <div class="classifier-picker">
+        <div class="picker-title">Classifiers to Run</div>
+        <label class="chip-v"><input type="checkbox" value="KNN" checked> <span>K-Nearest Neighbors</span></label>
+        <label class="chip-v"><input type="checkbox" value="TREE" checked> <span>Decision Tree</span></label>
+        <label class="chip-v"><input type="checkbox" value="LR" checked> <span>Logistic Regression</span></label>
+        <button id="runBtn" class="btn-primary">▶ Run Pipeline</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROGRESS ============ -->
+  <section class="progress-strip" id="progressStrip" hidden>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span id="progressLabel">0%</span>
+  </section>
+
+  <!-- ============ PRIMARY RECOMMENDATION ============ -->
+  <section class="recommendation" id="recommendation" hidden>
+    <div class="rec-left">
+      <div class="rec-icon">🏆</div>
+      <div>
+        <span class="rec-badge">PRIMARY RECOMMENDATION</span>
+        <h2 class="rec-title" id="recTitle">—</h2>
+        <p class="rec-desc" id="recDesc">—</p>
+      </div>
+    </div>
+    <div class="rec-metrics">
+      <div class="rec-metric">
+        <span class="rec-metric-label">BEST G-MEAN</span>
+        <span class="rec-metric-value" id="recGmean">—</span>
+      </div>
+      <div class="rec-metric">
+        <span class="rec-metric-label">REDUCTION</span>
+        <span class="rec-metric-value" id="recReduction">—</span>
+      </div>
+      <div class="rec-metric">
+        <span class="rec-metric-label">AVG TIME</span>
+        <span class="rec-metric-value" id="recTime">—</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTIMIZER CARDS ============ -->
+  <section class="optimizer-grid" id="optimizerGrid" hidden>
+    <div class="opt-card" id="cardGA">
+      <div class="opt-head">
+        <h3>Genetic Algorithm (GA)</h3>
+        <span class="opt-badge" id="badgeGA"></span>
+      </div>
+      <div class="opt-metrics">
+        <div class="opt-metric"><span>G-Mean</span><b id="gaGmean">—</b></div>
+        <div class="opt-metric"><span>F1 Score</span><b id="gaF1">—</b></div>
+        <div class="opt-metric"><span>Features Kept</span><b id="gaFeatures">—</b></div>
+        <div class="opt-metric"><span>Execution</span><b id="gaTime">—</b></div>
+      </div>
+      <div class="opt-bar-wrap">
+        <div class="opt-bar-label">Feature Reduction Ratio <b id="gaReduction">—</b></div>
+        <div class="opt-bar"><div class="opt-bar-fill" id="gaBar"></div></div>
+      </div>
+    </div>
+
+    <div class="opt-card" id="cardPSO">
+      <div class="opt-head">
+        <h3>Particle Swarm (PSO)</h3>
+        <span class="opt-badge" id="badgePSO"></span>
+      </div>
+      <div class="opt-metrics">
+        <div class="opt-metric"><span>G-Mean</span><b id="psoGmean">—</b></div>
+        <div class="opt-metric"><span>F1 Score</span><b id="psoF1">—</b></div>
+        <div class="opt-metric"><span>Features Kept</span><b id="psoFeatures">—</b></div>
+        <div class="opt-metric"><span>Execution</span><b id="psoTime">—</b></div>
+      </div>
+      <div class="opt-bar-wrap">
+        <div class="opt-bar-label">Feature Reduction Ratio <b id="psoReduction">—</b></div>
+        <div class="opt-bar"><div class="opt-bar-fill" id="psoBar"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHARTS ============ -->
+  <section class="charts-grid" id="chartsGrid" hidden>
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Fitness Convergence</h3>
+        <span class="chart-sub">Fitness score optimization over search iterations</span>
+      </div>
+      <canvas id="convergenceChart" height="200"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Classifier Comparison Across Optimizers</h3>
+        <span class="chart-sub">G-Mean per classifier per optimizer</span>
+      </div>
+      <canvas id="comparisonChart" height="200"></canvas>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS TABLE ============ -->
+  <section class="table-card" id="resultsSection" hidden>
+    <div class="table-head">
+      <h3>Full Optimizer Execution Breakdown</h3>
+      <span class="table-sub">Comprehensive benchmark validation metrics</span>
+    </div>
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Classifier</th>
+          <th>Method</th>
+          <th>G-Mean</th>
+          <th>F1</th>
+          <th>Precision</th>
+          <th>Recall</th>
+          <th>Features Kept</th>
+          <th>Time (ms)</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </section>
+
+  <!-- ============ BASELINE TABLE ============ -->
+  <section class="table-card" id="baselineSection" hidden>
+    <div class="table-head">
+      <h3>Baseline — All Features (No Selection)</h3>
+      <span class="table-sub">Reference point for comparison</span>
+    </div>
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Classifier</th>
+          <th>G-Mean</th>
+          <th>F1</th>
+          <th>Precision</th>
+          <th>Recall</th>
+          <th>Features Kept</th>
+          <th>Time (ms)</th>
+        </tr>
+      </thead>
+      <tbody id="baselineBody"></tbody>
+    </table>
+  </section>
+
+  <!-- ============ FEATURE GROUPS ============ -->
+  <section class="table-card" id="featuresSection" hidden>
+    <div class="table-head">
+      <h3>Selected Feature Groups</h3>
+      <div class="legend">
+        <span class="legend-item"><span class="dot ga"></span> GA</span>
+        <span class="legend-item"><span class="dot pso"></span> PSO</span>
+        <span class="legend-item"><span class="dot both"></span> Both</span>
+      </div>
+    </div>
+    <div id="featureList" class="feature-list"></div>
+  </section>
+
+  <!-- ============ LOG ============ -->
+  <section class="table-card log-card" id="logSection" hidden>
+    <div class="table-head">
+      <h3>Live Log</h3>
+    </div>
+    <div id="log" class="log"></div>
+  </section>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
