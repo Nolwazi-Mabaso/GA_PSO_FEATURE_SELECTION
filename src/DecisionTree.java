@@ -74,7 +74,6 @@ public class DecisionTree {
             if (y[i] == 0) n0++; else n1++;
         }
 
-        // Stopping conditions
         if (depth >= maxDepth || indices.length < minSamplesSplit || n0 == 0 || n1 == 0) {
             node.featureIndex = -1;
             node.label = n1 > n0 ? 1 : 0;
@@ -90,11 +89,9 @@ public class DecisionTree {
         int[] bestLeftIdx = null;
         int[] bestRightIdx = null;
 
-        // For each feature, try thresholds at random data points
         for (int f = 0; f < nTry; f++) {
             int feature = (nTry == nFeatures) ? f : rng.nextInt(nFeatures);
 
-            // Sample up to 10 candidate thresholds
             int nAttempts = Math.min(10, indices.length);
             for (int a = 0; a < nAttempts; a++) {
                 double threshold = X[indices[rng.nextInt(indices.length)]][feature];

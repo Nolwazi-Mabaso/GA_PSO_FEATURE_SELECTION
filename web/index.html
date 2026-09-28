@@ -10,7 +10,6 @@
 
 <div class="app">
 
-  <!-- ============ HEADER ============ -->
   <header class="topbar">
     <div class="brand">
       <div class="brand-icon">⬢</div>
@@ -31,7 +30,6 @@
     </div>
   </header>
 
-  <!-- ============ SETUP ============ -->
   <section class="setup">
     <div class="setup-title">
       <span class="icon">⬆</span>
@@ -48,7 +46,6 @@
         <input type="text" id="datasetPath" value="data/dataset.csv" hidden>
       </div>
 
-      <!-- Dataset meta -->
       <div class="meta-card">
         <div class="meta-head">
           <span>Dataset Meta</span>
@@ -71,7 +68,6 @@
         </div>
       </div>
 
-      <!-- Classifier picker -->
       <div class="classifier-picker">
         <div class="picker-title">Classifiers to Run</div>
         <label class="chip-v"><input type="checkbox" value="KNN" checked> <span>K-Nearest Neighbors</span></label>
@@ -82,13 +78,11 @@
     </div>
   </section>
 
-  <!-- ============ PROGRESS ============ -->
   <section class="progress-strip" id="progressStrip" hidden>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <span id="progressLabel">0%</span>
   </section>
 
-  <!-- ============ PRIMARY RECOMMENDATION ============ -->
   <section class="recommendation" id="recommendation" hidden>
     <div class="rec-left">
       <div class="rec-icon">🏆</div>
@@ -114,7 +108,6 @@
     </div>
   </section>
 
-  <!-- ============ OPTIMIZER CARDS ============ -->
   <section class="optimizer-grid" id="optimizerGrid" hidden>
     <div class="opt-card" id="cardGA">
       <div class="opt-head">
@@ -151,7 +144,6 @@
     </div>
   </section>
 
-  <!-- ============ CHARTS ============ -->
   <section class="charts-grid" id="chartsGrid" hidden>
     <div class="chart-card">
       <div class="chart-head">
@@ -170,7 +162,6 @@
     </div>
   </section>
 
-  <!-- ============ RESULTS TABLE ============ -->
   <section class="table-card" id="resultsSection" hidden>
     <div class="table-head">
       <h3>Full Optimizer Execution Breakdown</h3>
@@ -193,7 +184,6 @@
     </table>
   </section>
 
-  <!-- ============ BASELINE TABLE ============ -->
   <section class="table-card" id="baselineSection" hidden>
     <div class="table-head">
       <h3>Baseline — All Features (No Selection)</h3>
@@ -215,7 +205,6 @@
     </table>
   </section>
 
-  <!-- ============ FEATURE GROUPS ============ -->
   <section class="table-card" id="featuresSection" hidden>
     <div class="table-head">
       <h3>Selected Feature Groups</h3>
@@ -228,7 +217,6 @@
     <div id="featureList" class="feature-list"></div>
   </section>
 
-  <!-- ============ LOG ============ -->
   <section class="table-card log-card" id="logSection" hidden>
     <div class="table-head">
       <h3>Live Log</h3>

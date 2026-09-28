@@ -1,6 +1,3 @@
-// ============================================================
-//  ELEMENTS
-// ============================================================
 const runBtn         = document.getElementById('runBtn');
 const browseBtn      = document.getElementById('browseBtn');
 const datasetInput   = document.getElementById('datasetPath');
@@ -34,18 +31,12 @@ const metaSamples      = document.getElementById('metaSamples');
 const metaFeatures     = document.getElementById('metaFeatures');
 const metaClusters     = document.getElementById('metaClusters');
 
-// ============================================================
-//  STATE
-// ============================================================
 let allGroups      = [];
 let selectedGroups = {};
 let convergenceChart = null;
 let comparisonChart  = null;
 let baselineRows     = [];
 
-// ============================================================
-//  FILE PICKER
-// ============================================================
 browseBtn.addEventListener('click', pickFile);
 
 async function pickFile() {
@@ -64,9 +55,6 @@ async function pickFile() {
   }
 }
 
-// ============================================================
-//  RUN
-// ============================================================
 runBtn.addEventListener('click', runPipeline);
 
 function runPipeline() {
@@ -164,9 +152,6 @@ function runPipeline() {
   };
 }
 
-// ============================================================
-//  RENDER HELPERS
-// ============================================================
 function renderResults(rows) {
   resultsBody.innerHTML = '';
   rows.forEach(r => {
@@ -272,7 +257,6 @@ function renderRecommendation(rows) {
 }
 
 function renderOptimizerCards(rows) {
-  // Aggregate best per optimizer across classifiers
   let bestGA = 0, bestPSO = 0;
   let gaFeat = 0, psoFeat = 0;
   let gaTime = 0, psoTime = 0;
@@ -301,7 +285,6 @@ function renderOptimizerCards(rows) {
   document.getElementById('gaBar').style.width  = gaRed + '%';
   document.getElementById('psoBar').style.width = psoRed + '%';
 
-  // Mark best card
   const cardGA  = document.getElementById('cardGA');
   const cardPSO = document.getElementById('cardPSO');
   const badgeGA  = document.getElementById('badgeGA');
@@ -327,7 +310,6 @@ function renderConvergenceChart() {
   if (convergenceChart) convergenceChart.destroy();
   const ctx = document.getElementById('convergenceChart').getContext('2d');
 
-  // Placeholder — replace with real data if you emit it
   const iterations = Array.from({ length: 20 }, (_, i) => i);
   const gaCurve  = iterations.map(i => 40 + 55 * (1 - Math.exp(-i / 5)));
   const psoCurve = iterations.map(i => 42 + 53 * (1 - Math.exp(-i / 4)));

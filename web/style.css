@@ -32,7 +32,6 @@ body {
   gap: 20px;
 }
 
-/* ============ TOPBAR ============ */
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -77,7 +76,6 @@ body {
   color: var(--accent);
 }
 
-/* ============ SETUP ============ */
 .setup {
   padding: 22px;
   background: linear-gradient(180deg, #0f1f38, #0a1628);
@@ -99,7 +97,6 @@ body {
   gap: 16px;
 }
 
-/* Drop zone */
 .drop-zone {
   border: 2px dashed var(--border);
   border-radius: 10px;
@@ -140,7 +137,6 @@ body {
   font-size: 11.5px; color: var(--text-mut);
 }
 
-/* Classifier picker */
 .classifier-picker {
   padding: 16px;
   background: var(--panel);
@@ -174,7 +170,6 @@ body {
   font-weight: 600;
 }
 
-/* Buttons */
 .btn-primary, .btn-outline {
   border: none;
   padding: 10px 18px;
@@ -199,7 +194,6 @@ body {
 .btn-outline:hover:not(:disabled) { background: rgba(59,167,255,0.1); }
 .btn-primary:disabled, .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ============ PROGRESS ============ */
 .progress-strip {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 20px;
@@ -221,7 +215,6 @@ body {
 }
 #progressLabel { font-size: 13px; color: var(--text-mut); min-width: 42px; font-weight: 600; }
 
-/* ============ RECOMMENDATION ============ */
 .recommendation {
   display: flex;
   justify-content: space-between;
@@ -259,7 +252,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* ============ OPTIMIZER CARDS ============ */
 .optimizer-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -327,7 +319,6 @@ body {
   transition: width 0.6s;
 }
 
-/* ============ CHARTS ============ */
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -343,7 +334,6 @@ body {
 .chart-head h3 { margin: 0 0 2px; font-size: 14px; font-weight: 700; }
 .chart-sub { font-size: 11.5px; color: var(--text-mut); }
 
-/* ============ TABLES ============ */
 .table-card {
   padding: 20px;
   background: var(--panel);
@@ -381,7 +371,6 @@ body {
 .clf-TREE { color: #f59e0b; font-weight: 700; }
 .clf-LR   { color: #22d3ee; font-weight: 700; }
 
-/* ============ FEATURES ============ */
 .feature-list {
   display: flex; flex-direction: column; gap: 6px;
   max-height: 400px; overflow-y: auto;
@@ -441,7 +430,7 @@ body {
   border-radius: 4px;
 }
 
-/* ============ LOG ============ */
+
 .log {
   background: #06101d;
   color: #7ddfb8;

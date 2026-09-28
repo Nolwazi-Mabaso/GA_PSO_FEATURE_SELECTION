@@ -33,7 +33,6 @@ public class LogisticRegression {
             for (int j = 0; j < nFeatures; j++)
                 Xtest[i][j] = testData[i][selectedFeatures.get(j)];
 
-        // Compute class weights for imbalance
         int nPos = 0, nNeg = 0;
         for (int label : trainLabels) {
             if (label == 1) nPos++; else nNeg++;
@@ -41,7 +40,6 @@ public class LogisticRegression {
         double posWeight = (nPos > 0) ? (double)(nPos + nNeg) / (2.0 * nPos) : 1.0;
         double negWeight = (nNeg > 0) ? (double)(nPos + nNeg) / (2.0 * nNeg) : 1.0;
 
-        // Weights and bias
         double[] w = new double[nFeatures];
         double b = 0.0;
 
@@ -73,7 +71,6 @@ public class LogisticRegression {
             b -= learningRate * (gradB / n);
         }
 
-        // Predict
         int tp = 0, tn = 0, fp = 0, fn = 0;
 
         for (int i = 0; i < Xtest.length; i++) {

@@ -19,7 +19,6 @@ public class FitnessFunction {
     }
 
 
-
     public double calculateFitnessCV(
         double[][] trainData,
         int[] trainLabels,

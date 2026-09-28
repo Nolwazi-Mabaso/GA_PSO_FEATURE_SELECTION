@@ -7,13 +7,11 @@ public class Runner {
     private final LogSink sink;
     private final List<String> classifiersToRun;
 
-    // ---- exposed to WebServer ----
     public int totalOriginalFeatures;
     public int numGroups;
     public List<Result> results = new ArrayList<>();
     public List<BaselineResult> baselineResults = new ArrayList<>();
 
-    // ---- result containers ----
     public static class Result {
         public String classifierName;
         public Evaluation gaEval;
@@ -31,7 +29,7 @@ public class Runner {
         public int numFeatures;
     }
 
-    // ---- constructors ----
+
     public Runner(String filePath, LogSink sink) {
         this(filePath, sink, List.of("KNN", "TREE", "LR"));
     }
@@ -42,9 +40,7 @@ public class Runner {
         this.classifiersToRun = classifiersToRun;
     }
 
-    // ================================================================
-    //  MAIN PIPELINE
-    // ================================================================
+    
     public void run() throws Exception {
 
         sink.log("             DATA LOADING & PREPROCESSING         ");
@@ -77,7 +73,6 @@ public class Runner {
         sink.log("Formed " + numGroups + " feature groups from "
                 + totalOriginalFeatures + " original features.");
 
-        // ---- emit groups to the UI ----
         StringBuilder groupsJson = new StringBuilder("[");
         for (int i = 0; i < groups.size(); i++) {
             if (i > 0) groupsJson.append(",");
@@ -89,7 +84,6 @@ public class Runner {
         groupsJson.append("]");
         sink.groups(groupsJson.toString());
 
-        // ---- data splits ----
         DataSplitter dataSplitter = new DataSplitter();
         DataSplit dataSplit = dataSplitter.splitData(processedData, 0.7);
 
@@ -110,9 +104,7 @@ public class Runner {
 
         int k = 5;
 
-        // ============================================================
-        //  BASELINE — all features, no selection
-        // ============================================================
+
         sink.log("\n====================================================");
         sink.log("   BASELINE — ALL FEATURES (NO SELECTION)");
         sink.log("====================================================");
@@ -123,9 +115,6 @@ public class Runner {
                         testData, testLabels, totalFeatures, k);
         }
 
-        // ============================================================
-        //  GA + PSO FOR EACH SELECTED CLASSIFIER
-        // ============================================================
         int step = 100 / Math.max(classifiersToRun.size(), 1);
         int done = 0;
 
@@ -144,9 +133,6 @@ public class Runner {
         sink.log("\nFramework Execution Completed Successfully!");
     }
 
-    // ================================================================
-    //  BASELINE — ALL FEATURES, NO SELECTION
-    // ================================================================
     private void runBaseline(String classifierName,
                              double[][] trainData, int[] trainLabels,
                              double[][] testData, int[] testLabels,
@@ -182,9 +168,6 @@ public class Runner {
         baselineResults.add(r);
     }
 
-    // ================================================================
-    //  GA + PSO FOR ONE CLASSIFIER
-    // ================================================================
     private void runPipeline(String classifierName,
                              double[][] innerTrainData, int[] innerTrainLabels,
                              double[][] validationData, int[] validationLabels,
@@ -192,13 +175,12 @@ public class Runner {
                              double[][] testData, int[] testLabels,
                              List<List<Integer>> groups, int numGroups, int k) {
 
-        sink.log("\n####################################################");
+        sink.log("\n");
         sink.log("   RUNNING PIPELINE WITH CLASSIFIER: " + classifierName);
-        sink.log("####################################################");
+        sink.log("_______________________________________________");
 
         FitnessFunction fitnessFunction = new FitnessFunction(k, classifierName);
 
-        // ================= GA =================
         sink.log("\nSTARTING GENETIC ALGORITHM (GA) — " + classifierName);
 
         int gaPopSize = 15;
@@ -256,7 +238,6 @@ public class Runner {
 
         long gaDuration = System.currentTimeMillis() - gaStart;
 
-        // ================= PSO =================
         sink.log("\nSTARTING PARTICLE SWARM OPTIMIZATION (PSO) — " + classifierName);
 
         int swarmSize = 15;
@@ -320,7 +301,6 @@ public class Runner {
 
         long psoDuration = System.currentTimeMillis() - psoStart;
 
-        // ================= FINAL TEST =================
         sink.log("\n[" + classifierName + "] EVALUATING FINAL TEST SET...");
 
         Evaluation gaEval;
@@ -345,7 +325,7 @@ public class Runner {
         sink.log("[" + classifierName + "] PSO → F1=" + String.format("%.4f", psoEval.calculateF1Score())
                 + "  GMean=" + String.format("%.4f", psoEval.calculateGMean()));
 
-        // ---- store result ----
+
         Result r = new Result();
         r.classifierName = classifierName;
         r.gaEval = gaEval;
@@ -357,9 +337,6 @@ public class Runner {
         results.add(r);
     }
 
-    // ================================================================
-    //  UTILITY
-    // ================================================================
     private List<String[]> moveColumnToEnd(List<String[]> data, int targetCol) {
         List<String[]> result = new ArrayList<>();
         for (String[] row : data) {
