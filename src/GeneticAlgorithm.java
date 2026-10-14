@@ -3,7 +3,7 @@ import java.util.List;
 import java.util.Random;
 
 public class GeneticAlgorithm {
-    private final Random random = new Random();
+    private final Random random = new Random(42);
 
     private final int populationSize;
     private final int generations;

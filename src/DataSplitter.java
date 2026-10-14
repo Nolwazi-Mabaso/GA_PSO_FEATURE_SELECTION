@@ -1,7 +1,7 @@
 import java.util.*;
 
 public class DataSplitter {
-    private final Random random = new Random();
+    private final Random random = new Random(42);
 
     public DataSplit splitData(List<String[]> data, double trainRatio) {
 

@@ -6,7 +6,7 @@ import java.util.Random;
 
 public class PSO {
 
-    private final Random random = new Random(); 
+    private final Random random = new Random(42); 
 
     private final int swarmSize;
     private final int iterations;

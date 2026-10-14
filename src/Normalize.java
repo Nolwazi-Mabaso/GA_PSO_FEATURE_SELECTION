@@ -10,8 +10,8 @@ public class Normalize {
         double[] min = new double[features];
         double[] max = new double[features];
 
-        Arrays.fill(min, Double.MAX_VALUE);
-        Arrays.fill(max, Double.MIN_VALUE);
+        Arrays.fill(min, Double.POSITIVE_INFINITY);
+        Arrays.fill(max, Double.NEGATIVE_INFINITY);
 
 
         for (String[] row : data) {

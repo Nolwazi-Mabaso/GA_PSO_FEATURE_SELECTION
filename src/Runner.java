@@ -6,6 +6,7 @@ public class Runner {
     private final String filePath;
     private final LogSink sink;
     private final List<String> classifiersToRun;
+    private final boolean useGrouping;
 
     public int totalOriginalFeatures;
     public int numGroups;
@@ -29,18 +30,21 @@ public class Runner {
         public int numFeatures;
     }
 
-
     public Runner(String filePath, LogSink sink) {
-        this(filePath, sink, List.of("KNN", "TREE", "LR"));
+        this(filePath, sink, List.of("KNN", "SVM", "NB"), true);
     }
 
     public Runner(String filePath, LogSink sink, List<String> classifiersToRun) {
+        this(filePath, sink, classifiersToRun, true);
+    }
+
+    public Runner(String filePath, LogSink sink, List<String> classifiersToRun, boolean useGrouping) {
         this.filePath = filePath;
         this.sink = sink;
         this.classifiersToRun = classifiersToRun;
+        this.useGrouping = useGrouping;
     }
 
-    
     public void run() throws Exception {
 
         sink.log("             DATA LOADING & PREPROCESSING         ");
@@ -59,20 +63,44 @@ public class Runner {
         int labelColumn = 0;
         rawData = moveColumnToEnd(rawData, labelColumn);
 
-        Preprocessor preprocessor = new Preprocessor(rawData);
-        List<String[]> processedData = preprocessor.preprocess();
+        // ---- 1. Remove duplicates FIRST ----
+        RemoveDuplicates rd = new RemoveDuplicates();
+        List<String[]> deduped = rd.remove(rawData);
+        sink.log("Removed duplicates. Rows remaining: " + deduped.size());
+
+        // ---- 2. Split BEFORE any statistical operation ----
+        DataSplitter dataSplitter = new DataSplitter();
+        DataSplit dataSplit = dataSplitter.splitData(deduped, 0.7);
+
+        // ---- 3. Impute using TRAINING only ----
+        HandleMissingValues imputer = new HandleMissingValues();
+        List<String[]> trainImputed = imputer.clean(dataSplit.getTrainSet());
+        List<String[]> testImputed  = imputer.clean(dataSplit.getTestSet());
         sink.log("Missing values replaced using mean imputation.");
 
-        List<List<Integer>> groups = preprocessor.getGroups();
-        numGroups = groups.size();
+        // ---- 4. Normalize using TRAINING only ----
+        Normalize scaler = new Normalize();
+        List<String[]> trainSet = scaler.scale(trainImputed);
+        List<String[]> testSet  = scaler.scale(testImputed);
+        sink.log("Features normalized.");
 
-        if (!processedData.isEmpty()) {
-            totalOriginalFeatures = processedData.get(0).length - 1;
+        // ---- 5. Group (Pearson or NoGrouping based on toggle) ----
+        List<List<Integer>> groups;
+        if (useGrouping) {
+            groups = new PearsonCorrelation(0.8).groupFeatures(trainSet);
+            sink.log("Applied Pearson correlation grouping (threshold 0.8).");
+        } else {
+            groups = new NoGrouping().groupFeatures(trainSet);
+            sink.log("No grouping applied. Each feature is its own group.");
         }
+
+        numGroups = groups.size();
+        totalOriginalFeatures = trainSet.get(0).length - 1;
 
         sink.log("Formed " + numGroups + " feature groups from "
                 + totalOriginalFeatures + " original features.");
 
+        // ---- Emit groups to UI ----
         StringBuilder groupsJson = new StringBuilder("[");
         for (int i = 0; i < groups.size(); i++) {
             if (i > 0) groupsJson.append(",");
@@ -84,27 +112,24 @@ public class Runner {
         groupsJson.append("]");
         sink.groups(groupsJson.toString());
 
-        DataSplitter dataSplitter = new DataSplitter();
-        DataSplit dataSplit = dataSplitter.splitData(processedData, 0.7);
-
+        // ---- Convert to arrays ----
         ValidationSplitter validationSplitter = new ValidationSplitter();
-        ValidationSplit validationSplit = validationSplitter.splitValidation(dataSplit.getTrainSet(), 0.8);
+        ValidationSplit validationSplit = validationSplitter.splitValidation(trainSet, 0.8);
 
         double[][] innerTrainData = DataConverter.toFeatureArray(validationSplit.getTrainingSet());
         int[] innerTrainLabels = DataConverter.toLabelArray(validationSplit.getTrainingSet());
 
-        double[][] validationData = DataConverter.toFeatureArray(validationSplit.getValidationSet());
-        int[] validationLabels = DataConverter.toLabelArray(validationSplit.getValidationSet());
+        double[][] finalTrainData = DataConverter.toFeatureArray(trainSet);
+        int[] finalTrainLabels = DataConverter.toLabelArray(trainSet);
 
-        double[][] finalTrainData = DataConverter.toFeatureArray(dataSplit.getTrainSet());
-        int[] finalTrainLabels = DataConverter.toLabelArray(dataSplit.getTrainSet());
-
-        double[][] testData = DataConverter.toFeatureArray(dataSplit.getTestSet());
-        int[] testLabels = DataConverter.toLabelArray(dataSplit.getTestSet());
+        double[][] testData = DataConverter.toFeatureArray(testSet);
+        int[] testLabels = DataConverter.toLabelArray(testSet);
 
         int k = 5;
 
-
+        // ============================================================
+        //  BASELINE — all features, no selection
+        // ============================================================
         sink.log("\n====================================================");
         sink.log("   BASELINE — ALL FEATURES (NO SELECTION)");
         sink.log("====================================================");
@@ -115,13 +140,15 @@ public class Runner {
                         testData, testLabels, totalFeatures, k);
         }
 
+        // ============================================================
+        //  GA + PSO FOR EACH SELECTED CLASSIFIER
+        // ============================================================
         int step = 100 / Math.max(classifiersToRun.size(), 1);
         int done = 0;
 
         for (String clf : classifiersToRun) {
             runPipeline(clf,
                     innerTrainData, innerTrainLabels,
-                    validationData, validationLabels,
                     finalTrainData, finalTrainLabels,
                     testData, testLabels,
                     groups, numGroups, k);
@@ -133,6 +160,9 @@ public class Runner {
         sink.log("\nFramework Execution Completed Successfully!");
     }
 
+    // ================================================================
+    //  BASELINE
+    // ================================================================
     private void runBaseline(String classifierName,
                              double[][] trainData, int[] trainLabels,
                              double[][] testData, int[] testLabels,
@@ -146,10 +176,10 @@ public class Runner {
         long start = System.currentTimeMillis();
         Evaluation eval;
 
-        if (classifierName.equals("TREE")) {
-            eval = new DecisionTree().evaluate(trainData, trainLabels, testData, testLabels, allFeatures);
-        } else if (classifierName.equals("LR")) {
-            eval = new LogisticRegression().evaluate(trainData, trainLabels, testData, testLabels, allFeatures);
+        if (classifierName.equals("SVM")) {
+            eval = new SVM().evaluate(trainData, trainLabels, testData, testLabels, allFeatures);
+        } else if (classifierName.equals("NB")) {
+            eval = new NaiveBayes().evaluate(trainData, trainLabels, testData, testLabels, allFeatures);
         } else {
             eval = new KNN(k).evaluate(trainData, trainLabels, testData, testLabels, allFeatures);
         }
@@ -168,9 +198,11 @@ public class Runner {
         baselineResults.add(r);
     }
 
+    // ================================================================
+    //  GA + PSO
+    // ================================================================
     private void runPipeline(String classifierName,
                              double[][] innerTrainData, int[] innerTrainLabels,
-                             double[][] validationData, int[] validationLabels,
                              double[][] finalTrainData, int[] finalTrainLabels,
                              double[][] testData, int[] testLabels,
                              List<List<Integer>> groups, int numGroups, int k) {
@@ -181,6 +213,7 @@ public class Runner {
 
         FitnessFunction fitnessFunction = new FitnessFunction(k, classifierName);
 
+        // ================= GA =================
         sink.log("\nSTARTING GENETIC ALGORITHM (GA) — " + classifierName);
 
         int gaPopSize = 15;
@@ -206,8 +239,8 @@ public class Runner {
                 List<Integer> selectedFeatures = ga.decodeChromosome(chromosome, groups);
 
                 double fitness = fitnessFunction.calculateFitnessCV(
-    innerTrainData, innerTrainLabels,
-    selectedFeatures, 3);
+                        innerTrainData, innerTrainLabels,
+                        selectedFeatures, 3);
 
                 fitnessScores.add(fitness);
 
@@ -238,6 +271,7 @@ public class Runner {
 
         long gaDuration = System.currentTimeMillis() - gaStart;
 
+        // ================= PSO =================
         sink.log("\nSTARTING PARTICLE SWARM OPTIMIZATION (PSO) — " + classifierName);
 
         int swarmSize = 15;
@@ -263,8 +297,8 @@ public class Runner {
                 List<Integer> selectedFeatures = pso.decodeParticle(particle.position, groups);
 
                 double fitness = fitnessFunction.calculateFitnessCV(
-    innerTrainData, innerTrainLabels,
-    selectedFeatures, 3);
+                        innerTrainData, innerTrainLabels,
+                        selectedFeatures, 3);
 
                 if (fitness > particle.pBestFitness) {
                     particle.pBestFitness = fitness;
@@ -301,22 +335,23 @@ public class Runner {
 
         long psoDuration = System.currentTimeMillis() - psoStart;
 
+        // ================= FINAL TEST =================
         sink.log("\n[" + classifierName + "] EVALUATING FINAL TEST SET...");
 
         Evaluation gaEval;
         Evaluation psoEval;
 
-        if (classifierName.equals("TREE")) {
-            DecisionTree clf = new DecisionTree();
-            gaEval = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestGaFeatures);
+        if (classifierName.equals("SVM")) {
+            SVM clf = new SVM();
+            gaEval  = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestGaFeatures);
             psoEval = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestPsoFeatures);
-        } else if (classifierName.equals("LR")) {
-            LogisticRegression clf = new LogisticRegression();
-            gaEval = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestGaFeatures);
+        } else if (classifierName.equals("NB")) {
+            NaiveBayes clf = new NaiveBayes();
+            gaEval  = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestGaFeatures);
             psoEval = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestPsoFeatures);
         } else {
             KNN clf = new KNN(k);
-            gaEval = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestGaFeatures);
+            gaEval  = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestGaFeatures);
             psoEval = clf.evaluate(finalTrainData, finalTrainLabels, testData, testLabels, bestPsoFeatures);
         }
 
@@ -324,7 +359,6 @@ public class Runner {
                 + "  GMean=" + String.format("%.4f", gaEval.calculateGMean()));
         sink.log("[" + classifierName + "] PSO → F1=" + String.format("%.4f", psoEval.calculateF1Score())
                 + "  GMean=" + String.format("%.4f", psoEval.calculateGMean()));
-
 
         Result r = new Result();
         r.classifierName = classifierName;
@@ -335,6 +369,33 @@ public class Runner {
         r.bestGaFeatures = bestGaFeatures;
         r.bestPsoFeatures = bestPsoFeatures;
         results.add(r);
+
+        String gaGroupsJson  = groupsFromFeatures(bestGaFeatures, groups);
+        String psoGroupsJson = groupsFromFeatures(bestPsoFeatures, groups);
+
+        String selectedJson = "{"
+                + "\"classifier\":\"" + classifierName + "\","
+                + "\"gaGroups\":" + gaGroupsJson + ","
+                + "\"psoGroups\":" + psoGroupsJson
+                + "}";
+        sink.selectedGroups(selectedJson);
+    }
+
+    // ================================================================
+    //  HELPERS
+    // ================================================================
+    private String groupsFromFeatures(List<Integer> rawFeatures, List<List<Integer>> groups) {
+        if (rawFeatures == null || groups == null) return "[]";
+        List<Integer> selected = new ArrayList<>();
+        for (int g = 0; g < groups.size(); g++) {
+            for (int f : groups.get(g)) {
+                if (rawFeatures.contains(f)) {
+                    selected.add(g);
+                    break;
+                }
+            }
+        }
+        return selected.toString();
     }
 
     private List<String[]> moveColumnToEnd(List<String[]> data, int targetCol) {
